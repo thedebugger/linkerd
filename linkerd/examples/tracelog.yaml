@@ -9,8 +9,12 @@ routers:
     /svc => /#/io.l5d.fs
   servers:
   - port: 4140
+- protocol: thrift
+  dtab: |
+    /svc => /$/inet/127.1/8080;
+  servers:
+  - port: 4114
 
 telemetry:
 - kind: io.l5d.tracelog
-  sampleRate: 0.2
-  level: TRACE
+  sampleRate: 1.0

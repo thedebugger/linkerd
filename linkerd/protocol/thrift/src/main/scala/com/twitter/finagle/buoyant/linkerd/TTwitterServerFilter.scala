@@ -10,6 +10,7 @@ import com.twitter.util.Future
 import io.buoyant.router.thrift.Dest
 import org.apache.thrift.protocol.{TMessage, TMessageType, TProtocolFactory}
 import scala.collection.JavaConverters._
+import com.twitter.logging.Logger
 
 /**
  * Forked from https://github.com/twitter/finagle/blob/develop/finagle-thrift/src/main/scala/com/twitter/finagle/thrift/TTwitterServerFilter.scala
@@ -20,6 +21,8 @@ class TTwitterServerFilter(
   serviceName: String,
   protocolFactory: TProtocolFactory
 ) extends SimpleFilter[Array[Byte], Array[Byte]] {
+
+  val log = Logger.get(getClass.getName)
   // Concurrency is not an issue here since we have an instance per
   // channel, and receive only one request at a time (thrift does no
   // pipelining).  Furthermore, finagle will guarantee this by
@@ -54,6 +57,7 @@ class TTwitterServerFilter(
       // Set the TraceId. This will be overwritten by TraceContext, if it is
       // loaded, but it should never be the case that the ids from the two
       // paths won't match.
+      log.info("Running through the ttwitter part. TraceId is %s and is sampled %s", richHeader.traceId, richHeader.traceId.sampled)
       Trace.letId(richHeader.traceId) {
 
         // Write dest into a local context
@@ -103,8 +107,11 @@ class TTwitterServerFilter(
 
         // upgrade & reply.
         isUpgraded = true
+        log.info("Upgraded to ttwitter+thrift successfully...")
         successfulUpgradeReply
+
       } else {
+        log.info("Using binary thrift...")
         Trace.recordBinary("srv/thrift/ttwitter", false)
         service(request)
       }

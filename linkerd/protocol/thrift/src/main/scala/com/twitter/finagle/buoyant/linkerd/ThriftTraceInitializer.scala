@@ -1,5 +1,6 @@
 package com.twitter.finagle.buoyant.linkerd
 
+import com.twitter.logging.Logger
 import com.twitter.finagle._
 import com.twitter.finagle.tracing.{Trace, TraceInitializerFilter, Tracer}
 
@@ -21,11 +22,18 @@ object ThriftTraceInitializer {
     extends SimpleFilter[Array[Byte], Array[Byte]] {
 
     def apply(req: Array[Byte], service: Service[Array[Byte], Array[Byte]]) = {
-      if (!Trace.hasId)
+      val log = Logger.get(getClass.getName)
+      log.info("Inside the tracing filter...")
+      if (!Trace.hasId) {
+        log.info("TraceId not present...creating one...")
         Trace.letTracerAndNextId(tracer) {
+          log.info("Generated TraceId is %s", Trace.id.traceId)
           service(req)
         }
-      else service(req)
+      } else {
+        log.info("TraceId is present %s", Trace.id.traceId)
+        service(req)
+      }
     }
   }
 }
